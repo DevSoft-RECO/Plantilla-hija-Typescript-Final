@@ -1,5 +1,4 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from '@/stores/auth';
 
 // Cliente para la App Madre (Auth y Datos Globales)
 const motherApi = axios.create({
@@ -12,12 +11,13 @@ const motherApi = axios.create({
 
 // Interceptor para inyectar el token si es necesario
 motherApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const authStore = useAuthStore();
-    // A veces la madre necesita el token incluso para endpoints públicos si hay sesión
-    if (authStore.token) {
-        config.headers.Authorization = `Bearer ${authStore.token}`;
+    // CRÍTICO: Leer de sessionStorage, NO de localStorage
+    const token = sessionStorage.getItem('access_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
 
 export default motherApi;
+

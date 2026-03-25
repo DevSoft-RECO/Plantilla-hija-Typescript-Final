@@ -55,63 +55,49 @@ const router = createRouter({
 })
 
 // --- GUARDIA DE NAVEGACIÓN ---
-router.beforeEach(async (to, _from) => {
+router.beforeEach(async (to, _from, next) => {
     const authStore = useAuthStore()
 
     // 0. Callback o Unauthorized → siempre pasar
     if (to.name === 'callback' || to.name === 'unauthorized') {
-        return true
+        return next()
     }
 
     const isAuthenticated = !!authStore.token
 
-    // Caso 1: Ruta protegida sin token
-    if (to.matched.some(record => record.meta.requiresAuth) || to.path === '/') {
+    // Caso 1: Ruta requiere Auth y no tenemos token
+    if (to.matched.some(record => record.meta.requiresAuth)) {
         if (!isAuthenticated) {
             console.log('🔒 Acceso Hija: Usuario sin sesión. Iniciando flujo SSO...')
-            authStore.login()
-            return false
+            authStore.login(to.fullPath); // Guardar URL original
+            return next(false);
         }
     }
 
-    // Caso 2: Usuario autenticado
+    // Caso 2: Estamos autenticados, verificar identidad
     if (isAuthenticated) {
-        if (!authStore.isReady) {
+        if (!authStore.isReady || !authStore.user) {
             try {
-                await authStore.fetchUser()
+                await authStore.fetchUser();
             } catch {
-                return false
+                // RE-AUTENTICACIÓN FLUIDA: 
+                // Si el token falló, intentamos PKCE de nuevo
+                authStore.login(to.fullPath);
+                return next(false);
             }
         }
 
         // Verificar permiso
-        if (to.meta.permission && !authStore.hasPermission(to.meta.permission)) {
-            const motherAppUrl =
-                import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
-
-            console.warn(
-                `⛔ Acceso denegado: Usuario no tiene el permiso '${to.meta.permission}'.`
-            )
-
+        if (to.meta.permission && !authStore.hasPermission(to.meta.permission as string)) {
+            const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
+            console.warn(`⛔ Acceso denegado: Falta permiso '${to.meta.permission}'.`)
             window.location.href = `${motherAppUrl}/apps`
-            return false
-        }
-
-        // Verificar rol
-        if (to.meta.role && !authStore.hasRole(to.meta.role)) {
-            const motherAppUrl =
-                import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
-
-            console.warn(
-                `⛔ Acceso denegado: Usuario no tiene el rol '${to.meta.role}'.`
-            )
-
-            window.location.href = `${motherAppUrl}/apps`
-            return false
+            return next(false)
         }
     }
 
-    return true
+    next()
 })
+
 
 export default router
