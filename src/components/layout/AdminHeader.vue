@@ -109,8 +109,14 @@ const isDropdownOpen = ref(false)
 
 // Datos del usuario (Protegidos contra null)
 const userName = computed(() => authStore.user?.name || "Usuario")
-const userAgencia = computed(() => authStore.user?.agencia || "Sin Agencia")
-// const userAgencia = computed(() => authStore.user?.agencia?.nombre || "Sin Agencia")
+
+/**
+ * TOGGLE DE BACKEND: 
+ * Descomenta la línea según el backend que estés utilizando.
+ */
+// const userAgencia = computed(() => authStore.user?.agencia || "Sin Agencia") // BACKEND GO (Retorna String)
+const userAgencia = computed(() => authStore.user?.agencia?.nombre || "Sin Agencia") // BACKEND LARAVEL (Retorna Objeto)
+
 const userPhoto = computed(() => getAvatarUrl(authStore.user?.avatar) || null)
 
 // Título dinámico
