@@ -316,12 +316,11 @@
                   </span>
                   <span v-else class="size-1.5 rounded-full bg-white/25 dark:bg-white/15 shrink-0 mx-1"></span>
 
-                  <!-- Texto con subrayado degradado cuando está activo -->
+                  <!-- Texto con subrayado degradado progresivo de 0 a 100% en hover -->
                   <span class="relative pb-0.5 inline-block truncate">
                     {{ child.label }}
                     <span
-                      v-if="isActive(child.route)"
-                      class="absolute bottom-0 left-0 right-0 h-[2px] rounded-full bg-gradient-to-r from-sky-400 via-[var(--color-mar-cope)] to-[var(--color-verde-cope)] shadow-[0_0_6px_var(--color-verde-cope)]"
+                      class="absolute bottom-0 left-0 h-[2px] rounded-full bg-gradient-to-r from-sky-400 via-[var(--color-mar-cope)] to-[var(--color-verde-cope)] shadow-[0_0_6px_var(--color-verde-cope)] w-0 group-hover/child:w-full transition-all duration-300 ease-out opacity-0 group-hover/child:opacity-100 pointer-events-none"
                     ></span>
                   </span>
                 </RouterLink>
@@ -490,16 +489,32 @@
                   :key="child.route"
                   :to="child.route"
                   @click="handleItemClick"
-                  class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer"
+                  class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer group/popchild"
                   :class="isActive(child.route)
                     ? 'bg-[var(--color-verde-cope)]/10 text-[var(--color-verde-cope)] border border-[var(--color-verde-cope)]/20 font-bold dark:bg-white/10 dark:text-white dark:border-white/15'
                     : 'text-slate-600 hover:text-[var(--color-azul-cope)] hover:bg-slate-100/90 dark:text-slate-200 dark:hover:text-white dark:hover:bg-white/10'"
                 >
+                  <!-- Flecha indicadora activa o punto -->
                   <span
-                    class="size-1.5 rounded-full shrink-0 transition-transform"
-                    :class="isActive(child.route) ? 'bg-[var(--color-verde-cope)] scale-125 shadow-[0_0_6px_var(--color-verde-cope)]' : 'bg-slate-300 dark:bg-slate-500'"
+                    v-if="isActive(child.route)"
+                    class="flex items-center justify-center shrink-0 size-3.5 text-[var(--color-verde-cope)]"
+                  >
+                    <svg class="size-3.5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </span>
+                  <span
+                    v-else
+                    class="size-1.5 rounded-full shrink-0 bg-slate-300 dark:bg-slate-500 group-hover/popchild:bg-[var(--color-verde-cope)] transition-colors"
                   />
-                  <span class="truncate">{{ child.label }}</span>
+
+                  <!-- Texto con subrayado degradado progresivo de 0 a 100% en hover -->
+                  <span class="relative pb-0.5 inline-block truncate">
+                    {{ child.label }}
+                    <span
+                      class="absolute bottom-0 left-0 h-[2px] rounded-full bg-gradient-to-r from-sky-400 via-[var(--color-mar-cope)] to-[var(--color-verde-cope)] shadow-[0_0_6px_var(--color-verde-cope)] w-0 group-hover/popchild:w-full transition-all duration-300 ease-out opacity-0 group-hover/popchild:opacity-100 pointer-events-none"
+                    ></span>
+                  </span>
                 </RouterLink>
               </div>
 
@@ -516,9 +531,9 @@
     <!-- PIE / CRÉDITOS -->
     <div class="p-3 mt-auto border-t border-white/10 dark:border-transparent dark:border-t-0 shrink-0">
       <div v-if="!layoutStore.isCollapsed" class="fade-in text-center">
-        <p class="text-[10px] font-medium text-white/50 mb-0.5">Desarrollado por</p>
+        <p class="text-[10px] font-medium text-white/50 mb-0.5">Diseñado por</p>
         <p class="text-xs font-bold text-white/90 tracking-wide">
-          Área de Informática <span class="text-[#0090e7] font-black">2025</span>
+          Ema Informática <span class="text-[#0090e7] font-black">2026</span>
         </p>
       </div>
       <div v-else class="flex justify-center fade-in">
@@ -591,8 +606,8 @@ const menuItems = computed(() => {
       iconSvg: '<path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />',
       show: true,
       children: [
-        { label: 'Opción A', route: '/admin/dashboard#opcion-a' },
-        { label: 'Opción B', route: '/admin/dashboard#opcion-b' }
+        { label: 'Menu de Opción A', route: '/admin/dashboard#opcion-a' },
+        { label: 'Menu de Opción B', route: '/admin/dashboard#opcion-b' }
       ]
     }
   ]
