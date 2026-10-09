@@ -61,6 +61,7 @@
 
 /* ==========================================================================
    EFECTO GOTA DE AGUA EXPANSIVA (CIRCULAR VIEW TRANSITION)
+   Apertura expansiva en ambos sentidos (activar y desactivar modo oscuro)
    ========================================================================== */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -69,18 +70,10 @@
 }
 
 ::view-transition-old(root) {
-  z-index: 9999;
+  z-index: 1;
 }
 
 ::view-transition-new(root) {
-  z-index: 1;
-}
-
-.dark::view-transition-old(root) {
-  z-index: 1;
-}
-
-.dark::view-transition-new(root) {
   z-index: 9999;
 }
 

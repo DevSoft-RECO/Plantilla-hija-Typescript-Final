@@ -48,7 +48,11 @@ export const useLayoutStore = defineStore('layout', () => {
         }
     }
 
-    function toggleTheme(event?: MouseEvent): void {
+    let isThemeTransitioning = false
+
+    async function toggleTheme(event?: MouseEvent): Promise<void> {
+        if (isThemeTransitioning) return
+
         const isDarkNext = !isDark.value
 
         const isAppearanceTransition =
@@ -62,35 +66,47 @@ export const useLayoutStore = defineStore('layout', () => {
             return
         }
 
-        const x = event ? event.clientX : window.innerWidth - 60
-        const y = event ? event.clientY : 32
+        isThemeTransitioning = true
+
+        const x = (event && typeof event.clientX === 'number') ? event.clientX : window.innerWidth - 60
+        const y = (event && typeof event.clientY === 'number') ? event.clientY : 32
 
         const endRadius = Math.hypot(
             Math.max(x, window.innerWidth - x),
             Math.max(y, window.innerHeight - y)
         )
 
-        const transition = (document as any).startViewTransition(async () => {
-            isDark.value = isDarkNext
-            updateDOMAndStorage()
-        })
+        try {
+            const transition = (document as any).startViewTransition(async () => {
+                isDark.value = isDarkNext
+                updateDOMAndStorage()
+            })
 
-        transition.ready.then(() => {
+            await transition.ready
+
             const clipPath = [
                 `circle(0px at ${x}px ${y}px)`,
                 `circle(${endRadius}px at ${x}px ${y}px)`
             ]
-            document.documentElement.animate(
+            const animation = document.documentElement.animate(
                 {
-                    clipPath: clipPath
+                    clipPath
                 },
                 {
-                    duration: 650,
+                    duration: 500,
                     easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
                     pseudoElement: '::view-transition-new(root)'
                 }
             )
-        })
+
+            await animation.finished
+        } catch (err) {
+            console.warn('[Theme] Transición visual interrumpida, aplicando tema inmediatamente:', err)
+            isDark.value = isDarkNext
+            updateDOMAndStorage()
+        } finally {
+            isThemeTransitioning = false
+        }
     }
 
     function updateDOMAndStorage(): void {

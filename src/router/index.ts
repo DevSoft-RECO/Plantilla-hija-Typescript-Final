@@ -55,12 +55,12 @@ const router = createRouter({
 })
 
 // --- GUARDIA DE NAVEGACIÓN ---
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to, _from) => {
     const authStore = useAuthStore()
 
     // 0. Callback o Unauthorized → siempre pasar
     if (to.name === 'callback' || to.name === 'unauthorized') {
-        return next()
+        return true
     }
 
     const isAuthenticated = !!authStore.token
@@ -70,7 +70,7 @@ router.beforeEach(async (to, _from, next) => {
         if (!isAuthenticated) {
             console.log('🔒 Acceso Hija: Usuario sin sesión. Iniciando flujo SSO...')
             authStore.login(to.fullPath); // Guardar URL original
-            return next(false);
+            return false;
         }
     }
 
@@ -83,7 +83,7 @@ router.beforeEach(async (to, _from, next) => {
                 // RE-AUTENTICACIÓN FLUIDA: 
                 // Si el token falló, intentamos PKCE de nuevo
                 authStore.login(to.fullPath);
-                return next(false);
+                return false;
             }
         }
 
@@ -92,11 +92,11 @@ router.beforeEach(async (to, _from, next) => {
             const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
             console.warn(`⛔ Acceso denegado: Falta permiso '${to.meta.permission}'.`)
             window.location.href = `${motherAppUrl}/apps`
-            return next(false)
+            return false
         }
     }
 
-    next()
+    return true
 })
 
 
