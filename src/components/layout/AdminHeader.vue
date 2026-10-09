@@ -51,9 +51,9 @@
     <!-- Right Side Actions -->
     <div class="flex items-center gap-3 sm:gap-4">
 
-      <!-- Theme Toggle con efecto suave -->
+      <!-- Theme Toggle con efecto de gota de agua expansiva -->
       <button
-        @click="layoutStore.toggleTheme"
+        @click="layoutStore.toggleTheme($event)"
         class="p-2 rounded-xl text-slate-500 dark:text-slate-400
                hover:text-amber-500 dark:hover:text-yellow-400
                hover:bg-[#0fa88f]/10 dark:hover:bg-white/10

@@ -48,9 +48,49 @@ export const useLayoutStore = defineStore('layout', () => {
         }
     }
 
-    function toggleTheme(): void {
-        isDark.value = !isDark.value
-        updateDOMAndStorage()
+    function toggleTheme(event?: MouseEvent): void {
+        const isDarkNext = !isDark.value
+
+        const isAppearanceTransition =
+            typeof document !== 'undefined' &&
+            'startViewTransition' in document &&
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+        if (!isAppearanceTransition) {
+            isDark.value = isDarkNext
+            updateDOMAndStorage()
+            return
+        }
+
+        const x = event ? event.clientX : window.innerWidth - 60
+        const y = event ? event.clientY : 32
+
+        const endRadius = Math.hypot(
+            Math.max(x, window.innerWidth - x),
+            Math.max(y, window.innerHeight - y)
+        )
+
+        const transition = (document as any).startViewTransition(async () => {
+            isDark.value = isDarkNext
+            updateDOMAndStorage()
+        })
+
+        transition.ready.then(() => {
+            const clipPath = [
+                `circle(0px at ${x}px ${y}px)`,
+                `circle(${endRadius}px at ${x}px ${y}px)`
+            ]
+            document.documentElement.animate(
+                {
+                    clipPath: clipPath
+                },
+                {
+                    duration: 650,
+                    easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                    pseudoElement: '::view-transition-new(root)'
+                }
+            )
+        })
     }
 
     function updateDOMAndStorage(): void {
