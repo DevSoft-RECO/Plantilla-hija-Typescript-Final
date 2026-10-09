@@ -31,6 +31,9 @@ onMounted(async () => {
             loader.remove();
         }, 400);
     }, 400);
+  } else {
+    document.documentElement.classList.remove('loading-lock');
+    document.body.classList.remove('loading-lock');
   }
 })
 

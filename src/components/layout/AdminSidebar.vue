@@ -15,15 +15,9 @@
     ></div>
   </Transition>
 
-  <!-- Overlay táctil/clic transparente para cerrar popovers flotantes y menús -->
-  <div
-    v-if="(layoutStore.isCollapsed && activeCollapsedGroup) || isUserMenuOpen"
-    class="fixed inset-0 z-40 bg-black/10 md:bg-transparent"
-    @click="closeAllPopovers"
-  ></div>
-
   <!-- ===== ASIDE / BARRA LATERAL (DISEÑO CÁPSULA Y BADGES CIRCULARES) ===== -->
   <aside
+    ref="sidebarRef"
     class="fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300
            bg-oscuro
            border-r border-[#0fa88f]/30 dark:border-transparent dark:border-r-0
@@ -675,6 +669,8 @@ const handleGroupClick = (id: string) => {
   }
 }
 
+const sidebarRef = ref<HTMLElement | null>(null)
+
 // Cerrar popovers y menús con tecla Escape
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
@@ -682,8 +678,16 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
+// Cerrar popovers y menús al hacer clic fuera del sidebar
+const handleDocumentClick = (e: MouseEvent) => {
+  if (sidebarRef.value && !sidebarRef.value.contains(e.target as Node)) {
+    closeAllPopovers()
+  }
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
+  window.addEventListener('click', handleDocumentClick)
   if (!authStore.user) {
     await authStore.checkAuth()
   }
@@ -691,6 +695,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
