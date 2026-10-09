@@ -25,8 +25,7 @@
   <!-- ===== ASIDE / BARRA LATERAL (DISEÑO CÁPSULA Y BADGES CIRCULARES) ===== -->
   <aside
     class="fixed inset-y-0 left-0 z-50 flex flex-col transition-all duration-300
-           bg-gradient-to-b from-[#013465] via-[#024a68] to-[#046571]
-           dark:bg-none dark:bg-oscuro
+           bg-oscuro
            border-r border-[#0fa88f]/30 dark:border-transparent dark:border-r-0
            shadow-[0_20px_50px_-15px_rgba(1,61,123,0.35)] dark:shadow-none"
     :class="[
@@ -34,6 +33,12 @@
       layoutStore.isCollapsed ? 'w-20 overflow-visible' : 'w-[230px] overflow-hidden'
     ]"
   >
+    <!-- Capa de degradado corporativo con transición suave perfectamente sincronizada a 300ms -->
+    <div
+      class="absolute inset-0 bg-gradient-to-b from-[#013465] via-[#024a68] to-[#046571]
+             transition-opacity duration-300 pointer-events-none -z-10
+             opacity-100 dark:opacity-0"
+    ></div>
     <!-- CABECERA: LOGO -->
     <div class="h-16 flex items-center justify-between px-4 shrink-0">
       <!-- Logo expandido -->

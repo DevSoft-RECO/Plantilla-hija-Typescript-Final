@@ -2,8 +2,7 @@
   <header
     class="sticky top-0 z-30 flex h-16 w-full items-center justify-between px-6
            bg-white/80 dark:bg-oscuro backdrop-blur-xl
-           border-b border-[#0fa88f]/40 dark:border-transparent dark:border-b-0
-           shadow-sm dark:shadow-none transition-colors duration-300"
+           transition-colors duration-300 relative"
   >
     <div class="flex items-center gap-3 md:gap-4">
 
@@ -140,7 +139,7 @@
           <div
             v-if="isProfileMenuOpen"
             class="absolute right-0 top-full mt-2 w-64
-                   bg-white/98 dark:bg-oscuro backdrop-blur-2xl
+                   bg-white dark:bg-oscuro backdrop-blur-2xl
                    border border-slate-200/90 dark:border-white/10 rounded-2xl
                    shadow-[0_20px_50px_rgba(0,0,0,0.18)] dark:shadow-[0_25px_50px_rgba(0,0,0,0.7)]
                    p-2.5 z-50 origin-top-right"
@@ -182,6 +181,32 @@
       </div>
     </div>
 
+    <!-- Borde inferior continuo con curva cóncava integrada -->
+    <div class="absolute top-full left-0 right-0 pointer-events-none z-30">
+      <!-- Línea horizontal que va desde el final de la curva hacia la derecha -->
+      <div class="absolute top-0 left-0 md:left-7 right-0 h-px bg-[#0fa88f]/40 dark:bg-transparent transition-colors duration-300"></div>
+
+      <!-- Curva cóncava hacia adentro -->
+      <div class="hidden md:block absolute top-0 left-0 w-7 h-7">
+        <svg class="w-7 h-7 block" viewBox="0 0 28 28">
+          <!-- Relleno cóncavo del Header (transición sincronizada de color) -->
+          <path
+            d="M 0 0 L 28 0 A 28 28 0 0 0 0 28 Z"
+            class="fill-white/80 dark:fill-oscuro transition-all duration-300"
+          />
+          <!-- Borde curvo conectado exactamente a la línea horizontal -->
+          <path
+            d="M 28 0.5 A 27.5 27.5 0 0 0 0.5 28"
+            fill="none"
+            stroke="#0fa88f"
+            stroke-opacity="0.4"
+            stroke-width="1"
+            class="dark:stroke-transparent transition-all duration-300"
+          />
+        </svg>
+      </div>
+    </div>
+
   </header>
 </template>
 
@@ -220,10 +245,7 @@ const userInitials = computed(() => {
 
 const handleReturnToMother = () => {
   isProfileMenuOpen.value = false
-  // 1. Destrucción local profunda (sessionStorage) para garantizar recarga SSO al volver
   authStore.logoutLocal() 
-  
-  // 2. Redirección limpia a la URL visual de la Madre
   window.location.href = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
 }
 
@@ -238,7 +260,6 @@ const handleKeydown = (e: KeyboardEvent) => {
 onMounted(async () => {
   window.addEventListener('keydown', handleKeydown)
   if (!authStore.user) {
-    // Intentamos recuperar la sesión si existe token
     await authStore.checkAuth()
   }
 })

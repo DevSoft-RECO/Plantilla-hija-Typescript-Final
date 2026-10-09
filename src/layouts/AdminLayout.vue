@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex h-screen bg-niebla dark:bg-black text-gray-800 dark:text-gray-100 font-sans overflow-hidden transition-colors duration-500">
+  <div class="relative flex h-screen bg-niebla dark:bg-black text-gray-800 dark:text-gray-100 font-sans overflow-hidden transition-colors duration-300">
 
     <!-- Fondo ambiental (detrás de todo) -->
     <AuroraBackground />
@@ -20,12 +20,11 @@
       </main>
     </div>
 
-
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue' // Agregamos onUnmounted
+import { onMounted, onUnmounted } from 'vue'
 import AdminSidebar from "../components/layout/AdminSidebar.vue"
 import AdminHeader from "../components/layout/AdminHeader.vue"
 import AuroraBackground from "../components/layout/AuroraBackground.vue"
@@ -35,12 +34,9 @@ const layoutStore = useLayoutStore()
 
 onMounted(() => {
   layoutStore.initTheme()
-
-  // Agregamos el "Listener" para detectar cuando el usuario divide la pantalla
   window.addEventListener('resize', layoutStore.handleResize)
 })
 
-// Buena práctica: Limpiar el listener cuando sales del componente
 onUnmounted(() => {
   window.removeEventListener('resize', layoutStore.handleResize)
 })
