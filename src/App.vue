@@ -22,13 +22,15 @@ onMounted(async () => {
   // Remove preloader with fade-out
   const loader = document.getElementById('loading-wrapper');
   if (loader) {
-    loader.style.transition = 'opacity 0.5s ease';
+    loader.style.transition = 'opacity 0.4s ease';
     setTimeout(() => {
         loader.style.opacity = '0';
+        document.documentElement.classList.remove('loading-lock');
+        document.body.classList.remove('loading-lock');
         setTimeout(() => {
             loader.remove();
-        }, 500);
-    }, 500);
+        }, 400);
+    }, 400);
   }
 })
 
