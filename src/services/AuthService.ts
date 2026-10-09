@@ -31,7 +31,8 @@ export default {
      */
     logout(): void {
         this.logoutLocal();
-        window.location.href = `${MOTHER_API_URL}/logout`;
+        const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173';
+        window.location.href = `${motherAppUrl}/login`;
     },
 
     logoutLocal(): void {

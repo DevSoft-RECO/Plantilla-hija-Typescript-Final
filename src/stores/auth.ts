@@ -114,12 +114,31 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    function logout(): void {
+    async function logout(): Promise<void> {
         disconnectSessionSocket()
-        user.value = null
-        token.value = null
-        isReady.value = false
-        AuthService.logout()
+        stopLocalCountdown()
+        showInactivityModal.value = false
+
+        try {
+            const motherApiUrl = import.meta.env.VITE_MOTHER_API_URL || 'http://localhost:8000'
+            if (token.value) {
+                await axios.post(`${motherApiUrl}/api/logout`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${token.value}`,
+                        Accept: 'application/json'
+                    }
+                })
+            }
+        } catch (e) {
+            console.warn('[AuthStore] Error revocando sesión central:', e)
+        } finally {
+            user.value = null
+            token.value = null
+            isReady.value = false
+            AuthService.logoutLocal()
+            const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
+            window.location.href = `${motherAppUrl}/login`
+        }
     }
 
     function logoutLocal(): void {
@@ -195,15 +214,18 @@ export const useAuthStore = defineStore('auth', () => {
 
         (window as any).Pusher = Pusher
 
+        const reverbPort = import.meta.env.VITE_REVERB_PORT ? parseInt(import.meta.env.VITE_REVERB_PORT) : 8082
+        const reverbScheme = import.meta.env.VITE_REVERB_SCHEME || 'http'
+
         echoInstance.value = new Echo({
             broadcaster: 'reverb',
             key: import.meta.env.VITE_REVERB_APP_KEY,
             wsHost: import.meta.env.VITE_REVERB_HOST || 'localhost',
-            wsPort: import.meta.env.VITE_REVERB_PORT ? parseInt(import.meta.env.VITE_REVERB_PORT) : 8080,
-            wssPort: import.meta.env.VITE_REVERB_PORT ? parseInt(import.meta.env.VITE_REVERB_PORT) : 8080,
-            forceTLS: false,
+            wsPort: reverbPort,
+            wssPort: reverbPort,
+            forceTLS: reverbScheme === 'https',
             enabledTransports: ['ws', 'wss'],
-            authEndpoint: `${import.meta.env.VITE_MOTHER_API_URL}/api/broadcasting/auth`,
+            authEndpoint: `${import.meta.env.VITE_MOTHER_API_URL || 'http://localhost:8000'}/api/broadcasting/auth`,
             auth: {
                 headers: {
                     Authorization: `Bearer ${token.value}`,
@@ -212,37 +234,51 @@ export const useAuthStore = defineStore('auth', () => {
             }
         })
 
-        // Escuchar canal privado del usuario centralizado
-        echoInstance.value.private(`user.${user.value.id}`)
-            .listen('.InactivityExpiringSoon', (e: any) => {
-                inactivitySessionId.value = e.sessionId
-                inactivityCountdown.value = Math.round(e.remainingSeconds) || 300
-                showInactivityModal.value = true
-                startLocalCountdown()
-            })
-            .listen('.SessionRenewed', (e: any) => {
-                // Si otra pestaña/app renovó esta misma sesión, cerramos el modal de forma síncrona
-                if (inactivitySessionId.value === e.sessionId) {
-                    showInactivityModal.value = false
-                    stopLocalCountdown()
-                }
-            })
-            .listen('.SessionForceClosed', () => {
+        const handleInactivityWarning = (e: any) => {
+            console.log('>>> [Echo] InactivityExpiringSoon recibido:', e)
+            const sid = e.sessionId || e.session_id || e.id || null
+            if (sid) {
+                inactivitySessionId.value = sid
+                sessionStorage.setItem('yk_sso_session_id', sid)
+            }
+            inactivityCountdown.value = Math.round(e.remainingSeconds || e.remaining_seconds || 300)
+            showInactivityModal.value = true
+            startLocalCountdown()
+        }
+
+        const handleSessionRenewed = (e: any) => {
+            console.log('>>> [Echo] SessionRenewed recibido:', e)
+            const renewedId = e.sessionId || e.session_id || e.id
+            const currentSid = inactivitySessionId.value || sessionStorage.getItem('yk_sso_session_id')
+            if (!currentSid || currentSid === renewedId) {
+                showInactivityModal.value = false
                 stopLocalCountdown()
-                disconnectSessionSocket()
-                AuthService.logoutLocal()
-                const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
-                window.location.href = `${motherAppUrl}/login?session_expired=true`
-            })
+            }
+        }
+
+        const handleForceClose = () => {
+            console.warn('>>> [Echo] SessionForceClosed recibido. Cerrando sesión...')
+            stopLocalCountdown()
+            disconnectSessionSocket()
+            sessionStorage.removeItem('yk_sso_session_id')
+            AuthService.logoutLocal()
+            const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
+            window.location.href = `${motherAppUrl}/login?session_expired=true`
+        }
+
+        // Escuchar canal privado del usuario centralizado (con y sin prefijo de punto)
+        const userChannel = echoInstance.value.private(`user.${user.value.id}`)
+        userChannel
+            .listen('.InactivityExpiringSoon', handleInactivityWarning)
+            .listen('InactivityExpiringSoon', handleInactivityWarning)
+            .listen('.SessionRenewed', handleSessionRenewed)
+            .listen('SessionRenewed', handleSessionRenewed)
+            .listen('.SessionForceClosed', handleForceClose)
+            .listen('SessionForceClosed', handleForceClose)
             .error((error: any) => {
-                console.warn('Error de autorización en canal de sockets:', error)
-                // Si la suscripción falla por token expirado/revocado (401 o 403) tras suspender la PC
+                console.warn('[Echo] Error de autorización en canal de sockets:', error)
                 if (error && (error.status === 401 || error.status === 403)) {
-                    stopLocalCountdown()
-                    disconnectSessionSocket()
-                    AuthService.logoutLocal()
-                    const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
-                    window.location.href = `${motherAppUrl}/login?session_expired=true`
+                    handleForceClose()
                 }
             })
     }
@@ -264,6 +300,7 @@ export const useAuthStore = defineStore('auth', () => {
                 inactivityCountdown.value--
             } else {
                 clearInterval(countdownTimerId!)
+                sessionStorage.removeItem('yk_sso_session_id')
                 AuthService.logoutLocal()
                 const motherAppUrl = import.meta.env.VITE_MOTHER_APP_URL || 'http://localhost:5173'
                 window.location.href = `${motherAppUrl}/login?session_expired=true`
@@ -279,23 +316,36 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     async function sendHeartbeatPing(): Promise<void> {
-        if (!inactivitySessionId.value || isHeartbeatLoading.value) return
+        if (isHeartbeatLoading.value) return
         isHeartbeatLoading.value = true
         try {
             const motherApiUrl = import.meta.env.VITE_MOTHER_API_URL || 'http://localhost:8000'
-            await axios.post(`${motherApiUrl}/api/sso/heartbeat`, {
-                session_id: inactivitySessionId.value
+            const sessionId = inactivitySessionId.value || sessionStorage.getItem('yk_sso_session_id')
+
+            if (!sessionId) {
+                console.warn('[Heartbeat] No se encontró session_id, cerrando modal preventivamente.')
+                showInactivityModal.value = false
+                stopLocalCountdown()
+                return
+            }
+
+            const response = await axios.post(`${motherApiUrl}/api/sso/heartbeat`, {
+                session_id: sessionId
             }, {
                 headers: {
-                    Authorization: `Bearer ${token.value}`
+                    Authorization: `Bearer ${token.value}`,
+                    Accept: 'application/json'
                 }
             })
 
+            console.log('>>> [Heartbeat] Actividad renovada exitosamente en la Madre:', response.data)
             showInactivityModal.value = false
             stopLocalCountdown()
-        } catch (err) {
-            console.error('Error al enviar ping de heartbeat a la Madre:', err)
-            logout()
+        } catch (err: any) {
+            console.error('[Heartbeat] Error al enviar ping de heartbeat a la Madre:', err)
+            if (err?.response?.status === 401 || err?.response?.status === 404) {
+                await logout()
+            }
         } finally {
             isHeartbeatLoading.value = false
         }
