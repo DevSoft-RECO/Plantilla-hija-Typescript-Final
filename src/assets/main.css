@@ -6,8 +6,55 @@
 @theme {
 
 
---color-azul-cope: #013d7b;
---color-verde-cope: #5aba03;
---color-gris-cope: #EDEDED;
+  --color-azul-cope: #013d7b;
+  --color-verde-cope: #5aba03;
+  --color-gris-cope: #EDEDED;
+  --color-oscuro: #191c24;
+  --color-claro: #ffffff;
+}
 
+/* ==========================================================================
+   FONDO AMBIENTAL (AuroraBackground)
+   Paleta extendida: verde mar como puente entre azul y verde.
+   `static` garantiza que las variables CSS siempre existan.
+   ========================================================================== */
+@theme static {
+  --color-mar-cope: #0fa88f;
+  /* verde mar */
+  --color-abismo: #000000;
+  /* fondo modo oscuro (negro profundo) */
+  --color-niebla: #eef3f8;
+  /* fondo modo claro (gris azulado) */
+
+  --animate-drift-a: drift-a 26s ease-in-out infinite alternate;
+  --animate-drift-b: drift-b 32s ease-in-out infinite alternate;
+  --animate-drift-c: drift-c 38s ease-in-out infinite alternate;
+
+  @keyframes drift-a {
+    to {
+      transform: translate3d(14vw, 10vh, 0) scale(1.15);
+    }
+  }
+
+  @keyframes drift-b {
+    to {
+      transform: translate3d(-12vw, 14vh, 0) scale(0.9);
+    }
+  }
+
+  @keyframes drift-c {
+    to {
+      transform: translate3d(10vw, -12vh, 0) scale(1.2);
+    }
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-drift-a,
+  .animate-drift-b,
+  .animate-drift-c {
+    animation: none;
+  }
 }
