@@ -19,5 +19,24 @@ motherApi.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     return config;
 });
 
+// Flag anti-bucle ante ráfagas 401
+let isHandlingMotherAuthError = false;
+
+// Interceptor de respuesta ante 401
+motherApi.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        if (error.response && error.response.status === 401 && !isHandlingMotherAuthError) {
+            isHandlingMotherAuthError = true;
+            console.error('[Mother API] Sesión 401 rechazada. Limpiando y redirigiendo al SSO.');
+            sessionStorage.removeItem('access_token');
+            sessionStorage.clear();
+            const AuthService = (await import('@/services/AuthService')).default;
+            AuthService.login();
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default motherApi;
 

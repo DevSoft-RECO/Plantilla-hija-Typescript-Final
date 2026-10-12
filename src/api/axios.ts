@@ -27,15 +27,19 @@ api.interceptors.request.use(
     (error: AxiosError) => Promise.reject(error)
 );
 
+// Flag para evitar múltiples ejecuciones concurrentes o bucles infinitos ante ráfagas de errores 401
+let isHandlingAuthError = false;
+
 // --- INTERCEPTOR DE RESPONSE (Llegada) ---
 api.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error: AxiosError) => {
-        if (error.response && error.response.status === 401) {
-            console.error('Sesión rechazada por Ecosistema.');
+        if (error.response && error.response.status === 401 && !isHandlingAuthError) {
+            isHandlingAuthError = true;
+            console.error('Sesión rechazada por Ecosistema (401). Limpiando sesión e iniciando re-autenticación.');
             sessionStorage.removeItem('access_token');
             sessionStorage.clear();
-            // Redirigir al login si falla la sesión
+            // Redirigir al login una sola vez
             AuthService.login();
         }
         return Promise.reject(error);
